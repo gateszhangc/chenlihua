@@ -3,15 +3,17 @@ kind: Ingress
 metadata:
   name: chenlihua
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/issue-temporary-certificate: "true"
+    cert-manager.io/issuer: letsencrypt-dns-prod
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
         - chenlihua.lol
         - www.chenlihua.lol
-      secretName: chenlihua-tls
+      secretName: chenlihua-live-tls
   rules:
     - host: chenlihua.lol
       http:

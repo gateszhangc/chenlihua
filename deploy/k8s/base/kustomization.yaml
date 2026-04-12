@@ -5,6 +5,7 @@ namespace: chenlihua
 
 resources:
   - namespace.yaml
+  - issuer.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml
