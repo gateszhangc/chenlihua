@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 陈丽华关键词站
 
-## Getting Started
+围绕 `陈丽华最新消息` 构建的 Next.js 关键词站，包含公开时间线、FAQ、来源汇总、Clarity 接入和 ArgoCD/Kubernetes 发布骨架。
 
-First, run the development server:
+## 本地开发
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+默认打开 `http://localhost:3000`。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 测试与构建
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run test:e2e
+```
 
-## Learn More
+`test:e2e` 会先执行生产构建，再用 Playwright 以 `next start` 模式启动站点，避免和本地开发中的 `next dev` 冲突。
 
-To learn more about Next.js, take a look at the following resources:
+## 环境变量
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+复制 `.env.example` 作为本地或 CI 参考：
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+NEXT_PUBLIC_SITE_URL=https://chenlihua.lol
+NEXT_PUBLIC_CLARITY_PROJECT_ID=waexonttkx
+NEXT_PUBLIC_GA_MEASUREMENT_ID=
+GOOGLE_SITE_VERIFICATION=
+```
 
-## Deploy on Vercel
+说明：
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `NEXT_PUBLIC_CLARITY_PROJECT_ID` 默认生产值是 `waexonttkx`
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID` 预留给 GA4
+- `GOOGLE_SITE_VERIFICATION` 用于 Search Console 验证标签
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 部署映射
+
+- GitHub repository: `gateszhangc/chenlihua`
+- Git branch: `main`
+- Image repository: `registry.144.91.77.245.sslip.io/chenlihua`
+- K8s manifest path: `deploy/k8s/overlays/prod`
+- Argo CD application: `chenlihua`
+- Primary domain: `chenlihua.lol`
+- 发布链路：`gateszhangc/chenlihua -> main -> registry.144.91.77.245.sslip.io/chenlihua -> deploy/k8s/overlays/prod -> ArgoCD application chenlihua`
+
+## GitHub Actions
+
+工作流位于 `.github/workflows/build-and-release.yml`，职责是：
+
+1. 构建并推送镜像到私有 registry
+2. 用当前 `git sha` 回写 `deploy/k8s/overlays/prod/kustomization.yaml`
+3. 提交 `chore: release <sha> [skip ci]`，让 ArgoCD 感知 manifest 更新
+
+需要的 GitHub Secrets / Variables：
+
+- Secrets: `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`
+- Variables: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CLARITY_PROJECT_ID`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `GOOGLE_SITE_VERIFICATION`
+
+## ArgoCD 与 Kubernetes
+
+- ArgoCD Application 清单位于 `deploy/argocd/application.yaml`
+- 基础资源位于 `deploy/k8s/base`
+- 生产 overlay 位于 `deploy/k8s/overlays/prod`
+- Ingress 同时接收 `chenlihua.lol` 和 `www.chenlihua.lol`，站点层通过 Next.js 重定向把 `www` 归并到 apex
+
+## 上线检查
+
+上线后至少核验：
+
+1. `https://chenlihua.lol/healthz` 返回 200
+2. `https://chenlihua.lol/robots.txt` 与 `/sitemap.xml` 可访问
+3. 首页主视觉图正常加载
+4. 页面源代码中出现 canonical、OG 图、JSON-LD、Clarity 脚本

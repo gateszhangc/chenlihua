@@ -1,0 +1,9 @@
+.git
+.github
+.next
+node_modules
+test-results
+playwright-report
+README.md
+npm-debug.log*
+*.local
