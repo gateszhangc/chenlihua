@@ -7,7 +7,7 @@ resources:
 images:
   - name: registry.144.91.77.245.sslip.io/chenlihua
     newName: registry.144.91.77.245.sslip.io/chenlihua
-    newTag: latest
+    newTag: 810317c9165a63c8eae35a959a009ae90b2590f3
 
 commonAnnotations:
   app.kubernetes.io/managed-by: argocd
